@@ -1,0 +1,8 @@
+check = { 1 }
+
+main = {
+    println(check())
+    @ check() max 5 {
+        println("In loop")
+    }
+}
