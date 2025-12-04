@@ -1,19 +1,188 @@
 import "github.com/xyproto/c67game"
+import sdl3 as sdl
 
-x := square(5)
-y := add(10, 20)
-z := double(7)
+SCREEN_WIDTH := 320
+SCREEN_HEIGHT := 480
+BLOCK_SIZE := 20
+
+GRID_WIDTH := 10
+GRID_HEIGHT := 20
+
+BLACK := 0x000000
+WHITE := 0xFFFFFF
+CYAN := 0x00FFFF
+YELLOW := 0xFFFF00
+PURPLE := 0xFF00FF
+GREEN := 0x00FF00
+RED := 0xFF0000
+BLUE := 0x0000FF
+ORANGE := 0xFF8800
+
+grid := [200]
+
+current_x := 4
+current_y := 0
+current_piece := 0
+game_over_flag := 0
+
+colors := [CYAN, YELLOW, PURPLE, GREEN, RED, BLUE, ORANGE]
+
+// I piece
+piece_I := [0, 0, 0, 0,
+            1, 1, 1, 1,
+            0, 0, 0, 0,
+            0, 0, 0, 0]
+
+// O piece
+piece_O := [0, 1, 1, 0,
+            0, 1, 1, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0]
+
+// T piece
+piece_T := [0, 1, 0, 0,
+            1, 1, 1, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0]
+
+// L piece
+piece_L := [0, 0, 1, 0,
+            1, 1, 1, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0]
+
+init_grid = {
+    @ i in 0..<200 max 200 {
+        grid[i] <- 0
+    }
+}
+
+draw_block = (renderer, x, y, color) -> {
+    draw_rect(renderer, x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, color)
+}
+
+temp_idx := 0
+
+draw_grid = renderer -> {
+    @ y in 0..<GRID_HEIGHT max 20 {
+        @ x in 0..<GRID_WIDTH max 10 {
+            temp_idx <- y * GRID_WIDTH + x
+            grid[temp_idx] != 0 {
+                draw_block(renderer, x, y, colors[grid[temp_idx] - 1])
+            }
+        }
+    }
+}
+
+temp_piece_idx := 0
+
+draw_piece = renderer -> {
+    @ py in 0..<4 max 4 {
+        @ px in 0..<4 max 4 {
+            temp_piece_idx <- py * 4 + px
+            piece_T[temp_piece_idx] != 0 {
+                draw_block(renderer, current_x + px, current_y + py, PURPLE)
+            }
+        }
+    }
+}
+
+check_x := 0
+check_y := 0
+check_grid_idx := 0
+
+can_move = (dx, dy) -> {
+    @ py in 0..<4 max 4 {
+        @ px in 0..<4 max 4 {
+            temp_idx <- py * 4 + px
+            piece_T[temp_idx] != 0 {
+                check_x <- current_x + px + dx
+                check_y <- current_y + py + dy
+                
+                (check_x < 0) |b (check_x >= GRID_WIDTH) |b (check_y >= GRID_HEIGHT) {
+                    0
+                }
+                
+                check_y >= 0 {
+                    check_grid_idx <- check_y * GRID_WIDTH + check_x
+                    grid[check_grid_idx] != 0 {
+                        0
+                    }
+                }
+            }
+        }
+    }
+    1
+}
+
+place_x := 0
+place_y := 0
+place_grid_idx := 0
+
+place_piece = {
+    @ py in 0..<4 max 4 {
+        @ px in 0..<4 max 4 {
+            temp_idx <- py * 4 + px
+            piece_T[temp_idx] != 0 {
+                place_x <- current_x + px
+                place_y <- current_y + py
+                place_y >= 0 {
+                    place_grid_idx <- place_y * GRID_WIDTH + place_x
+                    grid[place_grid_idx] <- 3
+                }
+            }
+        }
+    }
+}
+
+spawn_piece = {
+    current_x <- 4
+    current_y <- 0
+    can_move(0, 0) ! {
+        game_over_flag <- 1
+    }
+}
+
+game_window := 0
+game_renderer := 0
+frame_count := 0
 
 main = {
-    hello()
-    greet("Player")
+    sdl.SDL_Init(sdl.SDL_INIT_VIDEO) or! {
+        exitln("Failed to initialize SDL!")
+    }
+    defer sdl.SDL_Quit()
     
-    println("Square of 5:")
-    println(x)
+    game_window <- sdl.SDL_CreateWindow("Block Game", SCREEN_WIDTH, SCREEN_HEIGHT, 0) or! {
+        exitln("Failed to create window!")
+    }
+    defer sdl.SDL_DestroyWindow(game_window)
     
-    println("10 + 20:")
-    println(y)
+    game_renderer <- sdl.SDL_CreateRenderer(game_window, 0) or! {
+        exitln("Failed to create renderer!")
+    }
+    defer sdl.SDL_DestroyRenderer(game_renderer)
     
-    println("Double of 7:")
-    println(z)
+    init_grid()
+    
+    @ game_over_flag == 0 max inf {
+        clear_screen(game_renderer, BLACK)
+        
+        frame_count <- frame_count + 1
+        frame_count >= 30 {
+            can_move(0, 1) {
+                current_y <- current_y + 1
+            } ! {
+                place_piece()
+                spawn_piece()
+            }
+            frame_count <- 0
+        }
+        
+        draw_grid(game_renderer)
+        draw_piece(game_renderer)
+        
+        present(game_renderer)
+        delay(33)
+    }
 }
