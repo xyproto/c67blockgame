@@ -1,0 +1,353 @@
+import "github.com/xyproto/c67game"
+
+# Tetris - A classic block-stacking game
+# Arrow keys to move, up to rotate, down to drop faster
+
+const SCREEN_WIDTH = 400
+const SCREEN_HEIGHT = 600
+const BLOCK_SIZE = 30
+const BOARD_WIDTH = 10
+const BOARD_HEIGHT = 20
+const BOARD_X = 50
+const BOARD_Y = 50
+
+# Colors for the 7 tetrominos
+const COLOR_I = 0x00FFFF  # Cyan
+const COLOR_O = 0xFFFF00  # Yellow
+const COLOR_T = 0x800080  # Purple
+const COLOR_S = 0x00FF00  # Green
+const COLOR_Z = 0xFF0000  # Red
+const COLOR_J = 0x0000FF  # Blue
+const COLOR_L = 0xFFA500  # Orange
+const COLOR_EMPTY = 0x202020  # Dark gray
+const COLOR_BORDER = 0x808080  # Gray
+
+# Tetromino shapes (4x4 grids)
+# I piece
+const I_SHAPE = [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+# O piece
+const O_SHAPE = [0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+# T piece
+const T_SHAPE = [0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+# S piece
+const S_SHAPE = [0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+# Z piece
+const Z_SHAPE = [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+# J piece
+const J_SHAPE = [1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+# L piece
+const L_SHAPE = [0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# Game state
+var board = [200]  # 10x20 grid (0 = empty, >0 = color)
+var current_piece = 0
+var current_x = 0
+var current_y = 0
+var current_rotation = 0
+var current_color = 0
+var game_over = 0
+var score = 0
+var drop_timer = 0.0
+var drop_speed = 0.5  # seconds between auto-drops
+var fast_drop = 0
+
+fn get_piece_shape(piece_type)
+    if piece_type == 0 return I_SHAPE
+    if piece_type == 1 return O_SHAPE
+    if piece_type == 2 return T_SHAPE
+    if piece_type == 3 return S_SHAPE
+    if piece_type == 4 return Z_SHAPE
+    if piece_type == 5 return J_SHAPE
+    if piece_type == 6 return L_SHAPE
+    I_SHAPE
+end
+
+fn get_piece_color(piece_type)
+    if piece_type == 0 return COLOR_I
+    if piece_type == 1 return COLOR_O
+    if piece_type == 2 return COLOR_T
+    if piece_type == 3 return COLOR_S
+    if piece_type == 4 return COLOR_Z
+    if piece_type == 5 return COLOR_J
+    if piece_type == 6 return COLOR_L
+    COLOR_I
+end
+
+fn rotate_shape(shape, rotation)
+    if rotation == 0 return shape
+    # For simplicity, we'll just support rotation 0
+    # Full rotation would need 90/180/270 degree transformations
+    shape
+end
+
+fn get_shape_block(shape, x, y)
+    shape[y * 4 + x]
+end
+
+fn board_index(x, y)
+    y * BOARD_WIDTH + x
+end
+
+fn get_board(x, y)
+    if x < 0 or x >= BOARD_WIDTH return 1
+    if y < 0 or y >= BOARD_HEIGHT return 1
+    board[board_index(x, y)]
+end
+
+fn set_board(x, y, value)
+    if x >= 0 and x < BOARD_WIDTH and y >= 0 and y < BOARD_HEIGHT
+        board[board_index(x, y)] = value
+    end
+end
+
+fn check_collision(piece_type, x, y, rotation)
+    let shape = get_piece_shape(piece_type)
+    let rotated = rotate_shape(shape, rotation)
+    
+    var sy = 0
+    while sy < 4
+        var sx = 0
+        while sx < 4
+            if get_shape_block(rotated, sx, sy) != 0
+                let bx = x + sx
+                let by = y + sy
+                if get_board(bx, by) != 0
+                    return 1
+                end
+            end
+            sx = sx + 1
+        end
+        sy = sy + 1
+    end
+    0
+end
+
+fn place_piece()
+    let shape = get_piece_shape(current_piece)
+    let rotated = rotate_shape(shape, current_rotation)
+    
+    var sy = 0
+    while sy < 4
+        var sx = 0
+        while sx < 4
+            if get_shape_block(rotated, sx, sy) != 0
+                set_board(current_x + sx, current_y + sy, current_color)
+            end
+            sx = sx + 1
+        end
+        sy = sy + 1
+    end
+end
+
+fn clear_lines()
+    var lines_cleared = 0
+    var y = BOARD_HEIGHT - 1
+    
+    while y >= 0
+        var full = 1
+        var x = 0
+        while x < BOARD_WIDTH
+            if get_board(x, y) == 0
+                full = 0
+            end
+            x = x + 1
+        end
+        
+        if full == 1
+            lines_cleared = lines_cleared + 1
+            # Move all lines above down
+            var dy = y
+            while dy > 0
+                var dx = 0
+                while dx < BOARD_WIDTH
+                    set_board(dx, dy, get_board(dx, dy - 1))
+                    dx = dx + 1
+                end
+                dy = dy - 1
+            end
+            # Clear top line
+            var dx = 0
+            while dx < BOARD_WIDTH
+                set_board(dx, 0, 0)
+                dx = dx + 1
+            end
+        else
+            y = y - 1
+        end
+    end
+    
+    if lines_cleared > 0
+        score = score + lines_cleared * lines_cleared * 100
+    end
+end
+
+fn spawn_piece()
+    current_piece = random_int(0, 6)
+    current_x = BOARD_WIDTH / 2 - 2
+    current_y = 0
+    current_rotation = 0
+    current_color = get_piece_color(current_piece)
+    
+    if check_collision(current_piece, current_x, current_y, current_rotation) == 1
+        game_over = 1
+    end
+end
+
+fn move_piece(dx, dy)
+    let new_x = current_x + dx
+    let new_y = current_y + dy
+    
+    if check_collision(current_piece, new_x, new_y, current_rotation) == 0
+        current_x = new_x
+        current_y = new_y
+        return 1
+    end
+    0
+end
+
+fn rotate_piece()
+    let new_rotation = (current_rotation + 1) % 4
+    if check_collision(current_piece, current_x, current_y, new_rotation) == 0
+        current_rotation = new_rotation
+    end
+end
+
+fn drop_piece()
+    if move_piece(0, 1) == 0
+        # Can't move down, place the piece
+        place_piece()
+        clear_lines()
+        spawn_piece()
+    end
+end
+
+fn init_board()
+    var i = 0
+    while i < 200
+        board[i] = 0
+        i = i + 1
+    end
+end
+
+fn draw_block(x, y, color)
+    let screen_x = BOARD_X + x * BLOCK_SIZE
+    let screen_y = BOARD_Y + y * BLOCK_SIZE
+    draw_rect(screen_x, screen_y, BLOCK_SIZE - 2, BLOCK_SIZE - 2, color)
+end
+
+fn draw_board()
+    var y = 0
+    while y < BOARD_HEIGHT
+        var x = 0
+        while x < BOARD_WIDTH
+            let cell = get_board(x, y)
+            if cell != 0
+                draw_block(x, y, cell)
+            else
+                draw_block(x, y, COLOR_EMPTY)
+            end
+            x = x + 1
+        end
+        y = y + 1
+    end
+    
+    # Draw border
+    let bx = BOARD_X - 2
+    let by = BOARD_Y - 2
+    let bw = BOARD_WIDTH * BLOCK_SIZE + 4
+    let bh = BOARD_HEIGHT * BLOCK_SIZE + 4
+    draw_rect(bx, by, bw, 2, COLOR_BORDER)
+    draw_rect(bx, by + bh - 2, bw, 2, COLOR_BORDER)
+    draw_rect(bx, by, 2, bh, COLOR_BORDER)
+    draw_rect(bx + bw - 2, by, 2, bh, COLOR_BORDER)
+end
+
+fn draw_current_piece()
+    let shape = get_piece_shape(current_piece)
+    let rotated = rotate_shape(shape, current_rotation)
+    
+    var sy = 0
+    while sy < 4
+        var sx = 0
+        while sx < 4
+            if get_shape_block(rotated, sx, sy) != 0
+                draw_block(current_x + sx, current_y + sy, current_color)
+            end
+            sx = sx + 1
+        end
+        sy = sy + 1
+    end
+end
+
+fn draw_ui()
+    draw_text("TETRIS", 10, 10, 0xFFFFFF)
+    draw_text("Score: " + score, 10, 30, 0xFFFFFF)
+    
+    if game_over == 1
+        draw_text("GAME OVER", 150, 300, 0xFF0000)
+        draw_text("Press R to restart", 130, 330, 0xFFFFFF)
+    end
+end
+
+fn main()
+    init_window(SCREEN_WIDTH, SCREEN_HEIGHT, "Tetris - C67")
+    
+    init_board()
+    spawn_piece()
+    
+    while window_open() == 1
+        let dt = get_delta_time()
+        
+        if game_over == 0
+            # Handle input
+            if key_pressed(KEY_LEFT)
+                move_piece(-1, 0)
+            end
+            if key_pressed(KEY_RIGHT)
+                move_piece(1, 0)
+            end
+            if key_pressed(KEY_UP)
+                rotate_piece()
+            end
+            if key_down(KEY_DOWN)
+                fast_drop = 1
+            else
+                fast_drop = 0
+            end
+            
+            # Auto-drop timer
+            let speed = drop_speed
+            if fast_drop == 1
+                speed = 0.05
+            end
+            
+            drop_timer = drop_timer + dt
+            if drop_timer >= speed
+                drop_timer = 0.0
+                drop_piece()
+            end
+        else
+            # Game over, wait for restart
+            if key_pressed(KEY_R)
+                init_board()
+                spawn_piece()
+                game_over = 0
+                score = 0
+                drop_timer = 0.0
+            end
+        end
+        
+        # Draw
+        clear_screen(0x000000)
+        draw_board()
+        if game_over == 0
+            draw_current_piece()
+        end
+        draw_ui()
+        present()
+    end
+    
+    close_window()
+end
+
+main()
