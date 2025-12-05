@@ -1,0 +1,6 @@
+import "github.com/xyproto/c67game@main"
+
+test_basic_arithmetic = {
+    x := 5 + 3
+    (x == 8) or! { exit(1) }
+}

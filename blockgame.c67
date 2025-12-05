@@ -95,6 +95,7 @@ main = {
     
     // Game loop
     @ frame in 0..<6000 {
+        poll_events()
         
         // Input
         key_left() {

@@ -1,0 +1,9 @@
+test_bitshift = {
+    color := 0xFF0000
+    r := (color >>b 16) &b 255
+    (r == 255) or! { exit(1) }
+    g := (color >>b 8) &b 255
+    (g == 0) or! { exit(1) }
+    b := color &b 255
+    (b == 0) or! { exit(1) }
+}
