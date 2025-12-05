@@ -1,12 +1,12 @@
-.PHONY: all clean run
+.PHONY: all clean
 
 all: blockgame
 
 blockgame: blockgame.c67
-	c67 blockgame.c67 -o blockgame
-
-run: blockgame
-	./blockgame
+c67 blockgame.c67 -o blockgame
 
 clean:
-	rm -f blockgame
+rm -f blockgame
+
+run: blockgame
+./blockgame

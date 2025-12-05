@@ -1,66 +1,173 @@
-import "github.com/xyproto/c67game"
-import sdl3 as sdl
+import "github.com/xyproto/c67game@main"
 
-SCREEN_WIDTH := 320
-SCREEN_HEIGHT := 480
-BLOCK_SIZE := 20
+BLOCK_SIZE := 30
 
+// Colors
 BLACK := 0x000000
-PURPLE := 0xFF00FF
+CYAN := 0x00FFFF
+BLUE := 0x0000FF
+ORANGE := 0xFF7F00
+YELLOW := 0xFFFF00
+GREEN := 0x00FF00
+PURPLE := 0x800080
+RED := 0xFF0000
+GRAY := 0x404040
 
-current_x := 4
-current_y := 0
+// Tetromino shapes (4x4 grid)
+piece_I := [0, 0, 0, 0,
+            1, 1, 1, 1,
+            0, 0, 0, 0,
+            0, 0, 0, 0]
+
+piece_O := [0, 1, 1, 0,
+            0, 1, 1, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0]
 
 piece_T := [0, 1, 0, 0,
             1, 1, 1, 0,
             0, 0, 0, 0,
             0, 0, 0, 0]
 
-sdl.SDL_Init(sdl.SDL_INIT_VIDEO) or! {
-    exitln("Failed to initialize SDL!")
-}
-defer sdl.SDL_Quit()
-
-window := sdl.SDL_CreateWindow("Block Game", SCREEN_WIDTH, SCREEN_HEIGHT, 0) or! {
-    exitln("Failed to create window!")
-}
-defer sdl.SDL_DestroyWindow(window)
-
-renderer := sdl.SDL_CreateRenderer(window, 0) or! {
-    exitln("Failed to create renderer!")
-}
-defer sdl.SDL_DestroyRenderer(renderer)
-
+// Game state
+grid := [0] * 200
+current_piece := piece_T
+current_color := PURPLE
+current_x := 3
+current_y := 0
 frame_count := 0
+collision_result := 0
 
-@ frame_num in 0..<1000 max 1000 {
-    // Clear screen
-    clear_screen(renderer, BLACK)
-    
-    // Draw piece at current position
-    @ py in 0..<4 max 4 {
-        @ px in 0..<4 max 4 {
-            piece_idx := py * 4 + px
-            piece_T[piece_idx] != 0 {
-                bx := (current_x + px) * BLOCK_SIZE
-                by := (current_y + py) * BLOCK_SIZE
+// Helper functions
+check_collision := (piece, px, py) -> {
+    collision_result <- 0
+    @ row in 0..<4 {
+        @ col in 0..<4 {
+            pidx := row * 4 + col
+            piece[pidx] != 0 {
+                gx := px + col
+                gy := py + row
                 
-                // Draw filled rectangle for block
-                draw_rect(renderer, bx, by, BLOCK_SIZE, BLOCK_SIZE, PURPLE)
+                (gx < 0 or gx >= 10 or gy >= 20) {
+                    collision_result <- 1
+                }
+                
+                (gy >= 0 and collision_result == 0) {
+                    gidx := gy * 10 + gx
+                    grid[gidx] != 0 {
+                        collision_result <- 1
+                    }
+                }
             }
         }
     }
-    
-    // Move piece down every 30 frames
-    frame_count <- frame_count + 1
-    frame_count >= 30 {
-        current_y <- current_y + 1
-        current_y >= 10 {
-            current_y <- 0
+    collision_result
+}
+
+place_piece := (piece, px, py, color) -> {
+    @ row in 0..<4 {
+        @ col in 0..<4 {
+            pidx := row * 4 + col
+            piece[pidx] != 0 {
+                gx := px + col
+                gy := py + row
+                (gy >= 0 and gy < 20 and gx >= 0 and gx < 10) {
+                    grid[gy * 10 + gx] <- color
+                }
+            }
         }
-        frame_count <- 0
+    }
+    0
+}
+
+new_piece := () -> {
+    current_piece <- piece_T
+    current_color <- PURPLE
+    current_x <- 3
+    current_y <- 0
+}
+
+// Main program
+main := () -> {
+    init_window("Tetris", 300, 600)
+    
+    new_piece()
+    
+    // Game loop
+    @ frame in 0..<6000 {
+        
+        // Input
+        key_left() {
+            check_collision(current_piece, current_x - 1, current_y) == 0 {
+                current_x <- current_x - 1
+            }
+        }
+        
+        key_right() {
+            check_collision(current_piece, current_x + 1, current_y) == 0 {
+                current_x <- current_x + 1
+            }
+        }
+        
+        key_down() {
+            check_collision(current_piece, current_x, current_y + 1) == 0 {
+                current_y <- current_y + 1
+            }
+        }
+        
+        // Gravity
+        frame_count <- frame_count + 1
+        frame_count >= 30 {
+            check_collision(current_piece, current_x, current_y + 1) == 0 {
+                current_y <- current_y + 1
+            }
+            (check_collision(current_piece, current_x, current_y + 1) != 0) {
+                place_piece(current_piece, current_x, current_y, current_color)
+                new_piece()
+            }
+            frame_count <- 0
+        }
+        
+        // Render
+        clear_screen(BLACK)
+        
+        // Draw grid
+        @ row in 0..<20 {
+            @ col in 0..<10 {
+                gidx := row * 10 + col
+                bx := col * 30
+                by := row * 30
+                
+                grid[gidx] != 0 {
+                    fill_rect(bx, by, 30, 30, grid[gidx])
+                    draw_rect(bx, by, 30, 30, GRAY)
+                }
+            (check_collision(current_piece, current_x, current_y + 1) != 0) {
+                    draw_rect(bx, by, 30, 30, GRAY)
+                }
+            }
+        }
+        
+        // Draw current piece
+        @ row in 0..<4 {
+            @ col in 0..<4 {
+                pidx := row * 4 + col
+                current_piece[pidx] != 0 {
+                    px := (current_x + col) * 30
+                    py := (current_y + row) * 30
+                    (current_y + row) >= 0 {
+                        fill_rect(px, py, 30, 30, current_color)
+                        draw_rect(px, py, 30, 30, GRAY)
+                    }
+                }
+            }
+        }
+        
+        present()
+        delay(16)
     }
     
-    present(renderer)
-    delay(33)
+    quit()
 }
+
+main()

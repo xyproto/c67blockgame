@@ -1,31 +1,32 @@
-# C67 Block Game (Tetris)
+# C67 Block Game
 
-A classic Tetris implementation written in C67 using the c67game library.
-
-## Controls
-
-- **Left/Right Arrow**: Move piece horizontally
-- **Up Arrow**: Rotate piece
-- **Down Arrow**: Fast drop
-- **R**: Restart game (when game over)
-
-## Building and Running
-
-```bash
-c67 blockgame.c67 -o blockgame
-./blockgame
-```
-
-Make sure SDL3.dll (Windows) or libSDL3.so (Linux) is available in your system.
+A Tetris clone written in C67, demonstrating the C67 game development capabilities.
 
 ## Features
 
 - Classic Tetris gameplay
-- 7 different tetromino pieces
-- Line clearing with score tracking
-- Increasing difficulty
-- Simple, beginner-friendly C67 code
+- Written in pure C67 using the c67game library
+- Uses SDL3 for graphics
+- Simple controls: Arrow keys for movement
 
-## About
+## Building
 
-This game demonstrates the power of the C67 language and its game development library (c67game), which provides a simple, pygame-like API for creating games without needing to understand SDL3 internals.
+```bash
+make
+```
+
+## Running
+
+```bash
+./blockgame
+```
+
+## Requirements
+
+- C67 compiler
+- SDL3 library
+
+## Controls
+
+- Left/Right Arrow: Move piece left/right
+- Down Arrow: Move piece down faster
