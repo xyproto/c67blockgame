@@ -19,7 +19,7 @@ block_y := 0
 block_color := COLOR_RED
 
 main = {
-    init_game(SCREEN_WIDTH, SCREEN_HEIGHT, "C67 Block Game")
+    init_window("C67 Block Game", SCREEN_WIDTH, SCREEN_HEIGHT)
     
     @ running() max 999999 {
         clear_screen(0x000000)
@@ -48,6 +48,6 @@ main = {
         delay(100)
     }
     
-    quit_game()
+    quit()
     0
 }
