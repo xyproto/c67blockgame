@@ -1,8 +1,0 @@
-test = (a, b, c, d, e) -> {
-    println(a)
-}
-
-main = {
-    test(1, 2, 3, 4, 5)
-    0
-}

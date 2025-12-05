@@ -1,0 +1,24 @@
+import "github.com/xyproto/c67game@main"
+
+main = {
+    init_window("Tetris - C67", 320, 480) or! {
+        exitln("Failed to initialize window")
+    }
+    
+    // Main game loop
+    @ i in 0..<100 {
+        clear_screen(0x202020)
+        fill_rect(50, 50, 100, 100, 0xFF0000)
+        present()
+        delay(16)
+        
+        // Check if still running
+        running() == 0 {
+            quit()
+            exitln("Quitting...")
+        }
+    }
+    
+    quit()
+    println("Game over!")
+}

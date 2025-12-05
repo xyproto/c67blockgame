@@ -88,7 +88,7 @@ new_piece := () -> {
 }
 
 // Main program
-main := () -> {
+main = {
     init_window("Tetris", 300, 600)
     
     new_piece()
@@ -168,6 +168,5 @@ main := () -> {
     }
     
     quit()
+    0
 }
-
-main()
