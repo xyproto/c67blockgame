@@ -1,0 +1,11 @@
+println("Testing simple lambda")
+
+test_val := 42
+
+simple_fn = {
+    println("In lambda, test_val = ", test_val)
+}
+
+simple_fn()
+
+println("Done")

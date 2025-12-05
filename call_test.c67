@@ -1,0 +1,13 @@
+println("Testing function calls in nested loops...")
+
+do_something = (a, b, c) -> {
+    printf("Called with %v, %v, %v\n", a, b, c)
+}
+
+@ i in 0..<3 max 3 {
+    @ j in 0..<3 max 3 {
+        do_something(i, j, i + j)
+    }
+}
+
+println("Done")

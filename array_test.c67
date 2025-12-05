@@ -1,0 +1,10 @@
+println("Testing array access")
+
+arr := [1, 2, 3, 4, 5]
+
+@ i in 0..<5 max 5 {
+    val := arr[i]
+    printf("arr[%v] = %v\n", i, val)
+}
+
+println("Done")
