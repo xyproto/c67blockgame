@@ -1,0 +1,10 @@
+x := 5
+y := 10
+
+main = {
+    x < y {
+        1 => { println("x is less") }
+        ~> { println("x is not less") }
+    }
+    0
+}

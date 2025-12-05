@@ -1,9 +1,0 @@
-println("Testing nested loops")
-
-@ i in 0..<3 max 3 {
-    @ j in 0..<3 max 3 {
-        printf("i=%v j=%v\n", i, j)
-    }
-}
-
-println("Done")

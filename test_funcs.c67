@@ -1,6 +1,0 @@
-import "github.com/xyproto/c67game"
-
-main = {
-    init_game(320, 240, "Test")
-    quit_game()
-}

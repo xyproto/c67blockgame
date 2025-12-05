@@ -1,14 +1,9 @@
-println("Starting loop test")
-
-counter := 0
-
-@ i in 0..<100 max 100 {
-    counter <- counter + 1
-    println("Counter: ", counter)
-    counter >= 5 {
-        println("Breaking at 5")
-        ret @
+main = {
+    x := 5
+    x < 10 {
+        x <- x + 1
+    } {
+        x <- 0
     }
+    0
 }
-
-println("Done. Counter = ", counter)

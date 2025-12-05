@@ -1,5 +1,0 @@
-import "github.com/xyproto/c67game"
-
-main = {
-    println("Test")
-}

@@ -1,6 +1,0 @@
-check = { 1 }
-
-println(check())
-@ check() max 5 {
-    println("In loop")
-}

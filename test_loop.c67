@@ -1,7 +1,0 @@
-check = { 1 }
-
-main = {
-    @ check() max 10 {
-        println("Loop")
-    }
-}

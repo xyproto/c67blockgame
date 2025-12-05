@@ -1,4 +1,4 @@
-import "github.com/xyproto/c67game"
+import "github.com/xyproto/c67game@main"
 
 BLOCK_SIZE = 30
 GRID_WIDTH = 10
@@ -24,24 +24,19 @@ main = {
     @ running() max 999999 {
         clear_screen(0x000000)
         
-        draw_rect(
-            block_x * BLOCK_SIZE,
-            block_y * BLOCK_SIZE,
-            BLOCK_SIZE,
-            BLOCK_SIZE,
-            block_color
-        )
+        draw_rect(block_x * BLOCK_SIZE, block_y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, block_color)
         
         block_y < GRID_HEIGHT - 1 {
-            block_y <- block_y + 1
-        } {
-            block_y <- 0
-            block_x <- block_x + 1
-            block_x >= GRID_WIDTH {
-                block_x <- 0
+            1 => { block_y <- block_y + 1 }
+            ~> {
+                block_y <- 0
+                block_x <- block_x + 1
+                block_x >= GRID_WIDTH {
+                    1 => { block_x <- 0 }
+                }
+                
+                block_color <- (block_color + 0x111111) &b 0xFFFFFF
             }
-            
-            block_color <- (block_color + 0x111111) &b 0xFFFFFF
         }
         
         present()

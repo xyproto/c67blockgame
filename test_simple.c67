@@ -1,5 +1,0 @@
-i := 0
-@ i < 5 max 10 {
-    println(i)
-    i <- i + 1
-}

@@ -1,7 +1,0 @@
-check = (n) -> { n < 5 }
-
-i := 0
-@ check(i) max 10 {
-    println(i)
-    i <- i + 1
-}
